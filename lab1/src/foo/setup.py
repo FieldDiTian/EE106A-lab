@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'chatter'
+package_name = 'foo'
 
 setup(
     name=package_name,
@@ -13,15 +13,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='ee106a-tad',
-    maintainer_email='stellybean.seo@gmail.com',
+    maintainer='ee106a-agc',
+    maintainer_email='tian_di@berkeley.edu',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'talker = chatter.publisher_member_function:main',
-                'listener = chatter.subscriber_member_function:main',                
         ],
     },
 )
