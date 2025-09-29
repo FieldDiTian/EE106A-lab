@@ -104,7 +104,14 @@ def skew_3d(omega):
     omega_hat - (3,3) ndarray: the corresponding skew symmetric matrix
     """
 
-    # YOUR CODE HERE
+    if not omega.shape == (3,):
+        raise TypeError('omega must be a 3-vector')
+    omega_hat = np.array([[0, -omega[2], omega[1]],
+                          [omega[2], 0, -omega[0]],
+                          [-omega[1], omega[0], 0]], dtype=float)
+    return omega_hat
+
+
 
 def rotation_3d(omega, theta):
     """
@@ -118,7 +125,18 @@ def rotation_3d(omega, theta):
     rot - (3,3) ndarray: the resulting rotation matrix
     """
 
-    # YOUR CODE HERE
+    if not omega.shape == (3,):
+        raise TypeError('omega must be a 3-vector')
+    omega = omega.astype(float)
+    wnorm = np.linalg.norm(omega)
+    if wnorm == 0:
+        return np.eye(3)
+    w = omega / wnorm
+    wx = skew_3d(w)
+    rot = np.eye(3) + np.sin(wnorm*theta) * wx + (1 - np.cos(wnorm*theta)) * (wx @ wx)
+    return rot
+
+
 
 def hat_3d(xi):
     """
@@ -131,7 +149,16 @@ def hat_3d(xi):
     xi_hat - (4,4) ndarray: the corresponding 4x4 matrix
     """
 
-    # YOUR CODE HERE
+    if not xi.shape == (6,):
+        raise TypeError('xi must be a 6-vector')
+    v = xi[0:3]
+    w = xi[3:6]
+    xi_hat = np.zeros((4,4))
+    xi_hat[0:3,0:3] = skew_3d(w)
+    xi_hat[0:3,3] = v
+    return xi_hat
+
+
 
 def homog_3d(xi, theta):
     """
@@ -145,7 +172,26 @@ def homog_3d(xi, theta):
     g - (4,4) ndarary: the resulting homogeneous transformation matrix
     """
 
-    # YOUR CODE HERE
+    if not xi.shape == (6,):
+        raise TypeError('xi must be a 6-vector')
+    v = xi[0:3].astype(float)
+    w = xi[3:6].astype(float)
+    wnorm = np.linalg.norm(w)
+    g = np.eye(4)
+    if wnorm == 0:
+        g[0:3,3] = v * theta
+        return g
+    R = rotation_3d(w, theta)
+    wx = skew_3d(w/wnorm)
+    ang = wnorm*theta
+    V = (np.eye(3)*theta + (1 - np.cos(ang))/wnorm * (wx) + (ang - np.sin(ang))/(wnorm) * (wx @ wx) / wnorm)
+    # More standard: V = I*theta + (1-cos(ang))/wnorm^2 * wx + (ang - sin(ang))/wnorm^3 * wx^2
+    V = np.eye(3)*theta + (1 - np.cos(ang))/(wnorm**2) * skew_3d(w) + (ang - np.sin(ang))/(wnorm**3) * (skew_3d(w) @ skew_3d(w))
+    p = V @ v
+    g[0:3,0:3] = R
+    g[0:3,3] = p
+    return g
+
 
 
 def prod_exp(xi, theta):
@@ -161,7 +207,19 @@ def prod_exp(xi, theta):
     g - (4,4) ndarray: the resulting homogeneous transformation matrix
     """
 
-    # YOUR CODE HERE
+    # xi is (6,N), theta is (N,)
+    if xi.ndim != 2:
+        raise TypeError('xi must be 2D (6,N)')
+    if xi.shape[0] != 6:
+        raise TypeError('First dim of xi must be 6')
+    if theta.shape[0] != xi.shape[1]:
+        raise TypeError('theta length must match xi columns')
+    g = np.eye(4)
+    for i in range(xi.shape[1]):
+        g = g @ homog_3d(xi[:,i], theta[i])
+    return g
+
+    
 
 #---------------------------------TESTING CODE---------------------------------
 #-------------------------DO NOT MODIFY ANYTHING BELOW HERE--------------------
