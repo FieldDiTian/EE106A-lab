@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'forward_kinematics_node = forward_kinematics.forward_kinematics_node:main',
+            'tf_echo = forward_kinematics.tf_echo:main',
         ],
     },
 )
