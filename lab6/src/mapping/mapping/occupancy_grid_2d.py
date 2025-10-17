@@ -57,6 +57,26 @@ class OccupancyGrid2d(Node):
         # -- self._y_min
         # -- self._y_max
         # -- self._y_res # The resolution in y. Note: This isn't a ROS parameter. What will you do instead?
+        
+        # Load x dimensions
+        self.declare_parameter("x/num", 25)
+        self._x_num = self.get_parameter("x/num").value
+        self.declare_parameter("x/min", -10.0)
+        self._x_min = self.get_parameter("x/min").value
+        self.declare_parameter("x/max", 10.0)
+        self._x_max = self.get_parameter("x/max").value
+        # Calculate x resolution from bounds and number of cells
+        self._x_res = (self._x_max - self._x_min) / self._x_num
+        
+        # Load y dimensions
+        self.declare_parameter("y/num", 25)
+        self._y_num = self.get_parameter("y/num").value
+        self.declare_parameter("y/min", -10.0)
+        self._y_min = self.get_parameter("y/min").value
+        self.declare_parameter("y/max", 10.0)
+        self._y_max = self.get_parameter("y/max").value
+        # Calculate y resolution from bounds and number of cells
+        self._y_res = (self._y_max - self._y_min) / self._y_num
 
         self.declare_parameter("update/occupied", 0.7)
         self._occupied_update = self.probability_to_logodds(
@@ -75,11 +95,21 @@ class OccupancyGrid2d(Node):
         # TODO! You'll need to set values for class variables called:
         # -- self._sensor_topic
         # -- self._vis_topic
+        
+        self.declare_parameter("topics/sensor", "/scan")
+        self._sensor_topic = self.get_parameter("topics/sensor").value
+        self.declare_parameter("topics/vis", "/vis/map")
+        self._vis_topic = self.get_parameter("topics/vis").value
 
         # Frames.
         # TODO! You'll need to set values for class variables called:
         # -- self._sensor_frame
         # -- self._fixed_frame
+        
+        self.declare_parameter("frames/sensor", "base_link")
+        self._sensor_frame = self.get_parameter("frames/sensor").value
+        self.declare_parameter("frames/fixed", "odom")
+        self._fixed_frame = self.get_parameter("frames/fixed").value
 
         return True
 
@@ -135,7 +165,10 @@ class OccupancyGrid2d(Node):
                 continue
             
             # Get angle of this ray in fixed frame.
-            # TODO!
+            # Calculate the angle of this specific ray in the sensor frame
+            ray_angle_sensor = msg.angle_min + idx * msg.angle_increment
+            # Transform to fixed frame by adding the robot's yaw angle
+            ray_angle_fixed = yaw + ray_angle_sensor
 
             if r > msg.range_max or r < msg.range_min:
                 continue
@@ -144,7 +177,48 @@ class OccupancyGrid2d(Node):
             # Update log-odds at each voxel along the way.
             # Only update each voxel once. 
             # The occupancy grid is stored in self._map
-            # TODO!
+            
+            # Calculate the endpoint of the ray (obstacle location)
+            end_x = sensor_x + r * np.cos(ray_angle_fixed)
+            end_y = sensor_y + r * np.sin(ray_angle_fixed)
+            
+            # Generate points along the ray from sensor to endpoint
+            # Use small step size for ray tracing
+            num_steps = int(r / (self._x_res * 0.5)) + 1
+            ray_distances = np.linspace(0, r, num_steps)
+            
+            # Keep track of which voxels we've already updated
+            visited_voxels = set()
+            
+            for dist in ray_distances:
+                # Calculate point coordinates along the ray
+                x = sensor_x + dist * np.cos(ray_angle_fixed)
+                y = sensor_y + dist * np.sin(ray_angle_fixed)
+                
+                # Convert to voxel coordinates
+                voxel = self.point_to_voxel(x, y)
+                
+                # Skip if out of bounds or already visited
+                if voxel is None or voxel in visited_voxels:
+                    continue
+                
+                ii, jj = voxel
+                visited_voxels.add(voxel)
+                
+                # Check if this is close to the endpoint (obstacle)
+                if dist >= r - self._x_res * 0.5:
+                    # This voxel contains an obstacle
+                    self._map[ii, jj] += self._occupied_update
+                    # Clamp to occupied threshold
+                    if self._map[ii, jj] > self._occupied_threshold:
+                        self._map[ii, jj] = self._occupied_threshold
+                else:
+                    # This voxel is free space
+                    self._map[ii, jj] += self._free_update
+                    # Clamp to free threshold
+                    if self._map[ii, jj] < self._free_threshold:
+                        self._map[ii, jj] = self._free_threshold
+        
         # Visualize.
         self.visualize()
 

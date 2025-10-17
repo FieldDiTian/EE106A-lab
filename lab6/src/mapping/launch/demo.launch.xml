@@ -7,11 +7,11 @@
   <arg name="vis_topic" default="/vis/map"/>
   <!-- Dimensions and bounds -->
   <arg name="x_num" default="25"/>
-  <arg name="x_min" default="-100.0"/>
-  <arg name="x_max" default="100.0"/>
+  <arg name="x_min" default="-10.0"/>
+  <arg name="x_max" default="10.0"/>
   <arg name="y_num" default="25"/>
-  <arg name="y_min" default="-100.0"/>
-  <arg name="y_max" default="100.0"/>
+  <arg name="y_min" default="-10.0"/>
+  <arg name="y_max" default="10.0"/>
   <!-- Update parameters -->
   <arg name="occupied_update" default="0.7"/>
   <arg name="occupied_threshold" default="0.97"/>

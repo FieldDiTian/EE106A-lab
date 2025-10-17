@@ -50,7 +50,10 @@ class TurtleBotController(Node):
 
     def loop(self):
         try:
-            # 获取从机器人坐标系到目标坐标系的变换
+            # 获取从机器msg.name = ["joint1", "joint2"]
+msg.position = [0.1, 0.2]
+msg.velocity = [0.0, 0.0]
+msg.effort = [0.0, 0.0]人坐标系到目标坐标系的变换
             tf = self.tf_buffer.lookup_transform(self.turtle_frame, self.ar_frame, Time())
 
             # 提取位置信息
@@ -105,7 +108,10 @@ class TurtleBotController(Node):
                     control_cmd.linear.x = self.K_linear * distance * 0.7
                     control_cmd.angular.z = self.K_angular * angle_to_target * 0.8
                 else:
-                    # 角度基本对准，主要前进
+                    # msg.name = ["joint1", "joint2"]
+msg.position = [0.1, 0.2]
+msg.velocity = [0.0, 0.0]
+msg.effort = [0.0, 0.0]角度基本对准，主要前进
                     control_cmd.linear.x = self.K_linear * distance
                     control_cmd.angular.z = self.K_angular * angle_to_target * 0.5
             
