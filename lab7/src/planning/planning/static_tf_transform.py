@@ -41,18 +41,15 @@ class ConstantTransformPublisher(Node):
         self.transform.transform.rotation.w = qw
         self.transform.header.frame_id = marker  # Use parameter instead of hardcoded value
         self.transform.child_frame_id = "base_link"
-        # ---------------------------
-        # TODO: Fill out TransformStamped message
-        # --------------------------
-
-
-
-
-        self.timer = self.create_timer(0.05, self.broadcast_tf)
-
-    def broadcast_tf(self):
-        self.transform.header.stamp = self.get_clock().now().to_msg()
+        
+        # For static transforms, use Time(0) to indicate it's valid for all time
+        # This prevents timestamp mismatch issues with dynamic TF chains
+        self.transform.header.stamp = rclpy.time.Time().to_msg()
+        
+        # Send the static transform ONCE (no timer needed)
         self.br.sendTransform(self.transform)
+        
+        self.get_logger().info(f'Published static transform: {marker} -> base_link')
 
 def main():
     rclpy.init()

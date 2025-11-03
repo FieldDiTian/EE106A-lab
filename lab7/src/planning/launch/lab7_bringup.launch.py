@@ -20,6 +20,9 @@ def generate_launch_description():
         launch_arguments={
             'pointcloud.enable': 'true',
             'rgb_camera.color_profile': '1920x1080x30',
+            'enable_sync': 'true',
+            'align_depth.enable': 'true',
+            'pointcloud.allow_no_texture_points': 'true',
         }.items(),
     )
 
@@ -98,15 +101,14 @@ def generate_launch_description():
     )
 
     # Static TF: base_link -> world
-    # -------------------------------------------------
-    # This TF is static because the "world" frame does not move.
-    # It is necessary to define the "world" frame for MoveIt to work properly as this is the defualt planning frame.
-    # -------------------------------------------------
+    
     static_base_world = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_base_world',
-        arguments=['0','0','0','0','0','0','1','base_link','world'],
+        arguments=['--x', '0', '--y', '0', '--z', '0',
+                   '--qx', '0', '--qy', '0', '--qz', '0', '--qw', '1',
+                   '--frame-id', 'base_link', '--child-frame-id', 'world'],
         output='screen',
     )
 
